@@ -80,7 +80,8 @@ class SAC(object):
         # self.sampler=sampler
         # self.writer = SummaryWriter('tblogs')
         # self.model_path = args.model_path + self.env_name + f'_s{self.seed}_{self.rl_update_every}_{self.latent_encoder_update_frequency}/'
-        prefix = './result_meta_ml1_train40_test10' + '_' + 'train_z_det' if self.z_deterministic else 'train_z_prob' + '/'  # TODO
+        prefix = './result_meta_ml1_train40_test10/'  # TODO
+        # prefix = './result_meta_ml1_train40_test10_train_z_det/' if self.z_deterministic else './result_meta_ml1_train40_test10_train_z_prob/' # TODO
         self.model_path = prefix + f'model_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
                                    f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
         self.test_rew_path = prefix + f'test_rew_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
