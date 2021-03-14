@@ -17,13 +17,14 @@ import pytorch_util as ptu
 import metaworld
 import random
 
+
 class SAC(object):
     def __init__(self, env, env_name, agent, q1_net, q2_net, seed=0,
                  steps_per_epoch=4000, epochs=100, replay_size=int(1e6), gamma=0.99,
                  polyak=0.995, lr=1e-3, alpha=0.2, batch_size=100, seq_len=20, start_steps=10000,
                  update_after=1000, update_every=50, num_test_episodes=10, max_ep_len=1000,
                  save_freq=10, model_path='./model/', device='cpu', train_steps=1000
-                 , collect_data_samples=10000, latent_encoder_update_frequency=10, args=None):
+                 , collect_data_samples=10000, latent_encoder_update_every=10, args=None):
         super().__init__()
         # self.env, self.test_env = env, env
 
@@ -33,7 +34,7 @@ class SAC(object):
         task = self.ml1.train_tasks[0]
         self.env.set_task(task)  # Set task
 
-        self.env_name=env_name
+        self.env_name = env_name
         self.agent = agent
         self.q1_net = q1_net
         self.q2_net = q2_net
@@ -67,7 +68,7 @@ class SAC(object):
         self.collect_data_samples = collect_data_samples
         self.update_latent_encoder = False
         self.latent_encoder_update_every = args.latent_encoder_update_every
-        self.rl_update_every= args.rl_update_every
+        self.rl_update_every = args.rl_update_every
         self.random_steps = args.random_steps
         self.update_begin_steps = args.update_begin_steps
         self.z_deterministic = args.z_deterministic
@@ -78,17 +79,18 @@ class SAC(object):
         self.tcl_lambda = args.tcl_lambda
         # self.sampler=sampler
         # self.writer = SummaryWriter('tblogs')
-        # self.model_path = args.model_path + self.env_name + f'_s{self.seed}_{self.rl_update_frequency}_{self.latent_encoder_update_frequency}/'
-        self.model_path = f'../result_meta/model_meta_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_frequency}_{self.rl_update_frequency}_' \
-                          f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
-        self.test_rew_path = f'../result_meta/test_rew_meta_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_frequency}_{self.rl_update_frequency}_' \
-                             f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
-        self.writer_prefix = f'{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}_{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_frequency}_{self.rl_update_frequency}_' \
+        # self.model_path = args.model_path + self.env_name + f'_s{self.seed}_{self.rl_update_every}_{self.latent_encoder_update_frequency}/'
+        prefix = './result_meta_ml1_train40_test10' + '_' + 'train_z_det' if self.z_deterministic else 'train_z_prob' + '/'  # TODO
+        self.model_path = prefix + f'model_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
+                                   f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
+        self.test_rew_path = prefix + f'test_rew_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
+                                      f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
+        self.writer_prefix = f'{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}_{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
                              f'{args.latent_buffer_size}_{args.rl_buffer_size}_'
         self.writer = SummaryWriter(
-            f'../result_meta/tblogs_meta_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_'
-            f'{self.latent_encoder_update_frequency}_{self.rl_update_frequency}_'
-            f'{args.latent_buffer_size}_{args.rl_buffer_size}/')
+            prefix + f'tblogs_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_'
+                     f'{self.latent_encoder_update_every}_{self.rl_update_every}_'
+                     f'{args.latent_buffer_size}_{args.rl_buffer_size}/')
         # time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
         # self.logger = EpochLogger(**logger_kwargs)
         # self.logger.save_config(locals())
@@ -244,7 +246,7 @@ class SAC(object):
         for p in self.q_params:
             p.requires_grad = True
 
-        if self.total_train_steps % 1000 == 0:
+        if self.total_train_steps % 2000 == 0:
             print('loss_q', loss_q.item())
             print('loss_pi', loss_pi.item())
 
@@ -354,8 +356,8 @@ class SAC(object):
         num_eps = 0
         total_rewards = []
 
-        # task = random.choice(self.ml1.train_tasks[0])#40:
-        task = self.ml1.train_tasks[0]
+        task = random.choice(self.ml1.train_tasks[40:])  # 40:
+        # task = self.ml1.train_tasks[0]
         self.env.set_task(task)  # Set task
 
         o = self.env.reset()
@@ -367,7 +369,8 @@ class SAC(object):
                 hidden_out = hidden_in
                 a = self.env.action_space.sample()
             else:
-                z, a, hidden_out = self.agent.get_action(hidden_in, o, z_deterministic=True, pi_deterministic=True)
+                z, a, hidden_out = self.agent.get_action(hidden_in, o, z_deterministic=True,
+                                                         pi_deterministic=True)  # TEST
             hidden_in = hidden_out
             a = a.squeeze()
             next_o, r, d, env_info = self.env.step(a)
@@ -378,7 +381,7 @@ class SAC(object):
             path_length += 1
             o = next_o
 
-            if d or path_length>=self.max_ep_len:
+            if d or path_length >= self.max_ep_len:
                 num_eps += 1
                 # print(f'rewards:{rewards},ave rewards:{rewards / path_length},path_length:{path_length},')
                 # time.sleep(0.2)
@@ -387,15 +390,16 @@ class SAC(object):
                 path_length = 0
                 self.env.seed(num_eps)
 
-                # task = random.choice(self.ml1.train_tasks[0])#40:
-                task = self.ml1.train_tasks[0]
+                task = random.choice(self.ml1.train_tasks[40:])  # 40:
+                # task = self.ml1.train_tasks[0]
                 self.env.set_task(task)  # Set task
 
                 o = self.env.reset()
                 # agent.clear_z()
 
         total_rewards = np.array(total_rewards)
-        print(f'test total_rewards\n mean: {total_rewards.mean()},std: {total_rewards.std()},max: {total_rewards.max()},min: {total_rewards.min()}')
+        print(
+            f'test total_rewards\n mean: {total_rewards.mean()},std: {total_rewards.std()},max: {total_rewards.max()},min: {total_rewards.min()}')
 
         self.writer.add_scalar(f'{self.writer_prefix}test_rew', float(total_rewards.mean()), self.total_train_steps)
         self.test_rew.append(total_rewards.mean())
@@ -407,8 +411,8 @@ class SAC(object):
         total_steps = self.steps_per_epoch * self.epochs
         start_time = time.time()
 
-        # task = random.choice(self.ml1.train_tasks[0]) #:40
-        task = self.ml1.train_tasks[0]
+        task = random.choice(self.ml1.train_tasks[:40])  # TODO
+        # task = self.ml1.train_tasks[0]
         self.env.set_task(task)  # Set task
 
         o, ep_ret, ep_len = self.env.reset(), 0, 0
@@ -451,7 +455,7 @@ class SAC(object):
             # that isn't based on the agent's state)
             d = False if ep_len == self.max_ep_len else d
 
-            if ep_len == self.max_ep_len: # TODO
+            if ep_len == self.max_ep_len:  # TODO
                 d = True
 
             # Store experience to replay buffer
@@ -465,8 +469,8 @@ class SAC(object):
             if d or (ep_len == self.max_ep_len):
                 ep_ret_list.append(ep_ret)
 
-                # task = random.choice(self.ml1.train_tasks[0])
-                task = self.ml1.train_tasks[0]
+                task = random.choice(self.ml1.train_tasks[:40])  # TODO
+                # task = self.ml1.train_tasks[0]
                 self.env.set_task(task)  # Set task
 
                 o, ep_ret, ep_len = self.env.reset(), 0, 0
@@ -484,7 +488,7 @@ class SAC(object):
                 ep_ret_list = []
 
             # Update handling
-            if self.total_env_steps >= self.update_begin_steps and self.total_env_steps % self.rl_update_frequency == 0:
+            if self.total_env_steps >= self.update_begin_steps and self.total_env_steps % self.rl_update_every == 0:
                 for j in range(self.rl_update_every // self.rl_fq):  # 200):
                     self.train_step_rl(self.update_latent_encoder)  # TODO
                     # self.sac_update_step()
@@ -494,7 +498,7 @@ class SAC(object):
                     # 比如hopper dim=11+3+1=15
                     self.total_train_steps += 1
 
-                if self.total_train_steps % self.steps_per_epoch == 0:
+                if self.total_train_steps % self.steps_per_epoch == 0:  # 每个epoch 1e4步 测试一次，跑10个seed
                     epoch = self.total_train_steps // self.steps_per_epoch
                     print('-' * 10)
                     print(f'epoch:{epoch}')
@@ -503,7 +507,7 @@ class SAC(object):
                     # Save model
                     if (epoch % self.save_freq == 0) or (epoch == self.epochs):
                         # self.logger.save_state({'env': self.env}, None)
-                        # model_path = self.model_path + self.env_name + f'_s{self.seed}_{self.rl_update_frequency}_{self.latent_encoder_update_frequency}/'
+                        # model_path = self.model_path + self.env_name + f'_s{self.seed}_{self.rl_update_every}_{self.latent_encoder_update_every}/'
 
                         # if not os.path.exists(model_path):
                         os.makedirs(self.model_path, exist_ok=True)

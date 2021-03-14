@@ -2,11 +2,12 @@ import metaworld
 import random
 import time
 import numpy as np
+
 # print(metaworld.ML1.ENV_NAMES)  # Check out the available environments
+env_id = 'reach-v1'  # 'pick-place-v1'
+ml1 = metaworld.ML1(env_id)  # Construct the benchmark, sampling tasks
 
-ml1 = metaworld.ML1('pick-place-v1') # Construct the benchmark, sampling tasks
-
-env = ml1.train_classes['pick-place-v1']()  # Create an environment with task `pick_place`
+env = ml1.train_classes[env_id]()  # Create an environment with task `pick_place`
 task = random.choice(ml1.train_tasks[:40])
 env.set_task(task)  # Set task
 
@@ -32,7 +33,7 @@ while ep < test_eps:
     # print(img.shape) #(400, 600, 3)
     # plt.savefig('img.png',img)
     env.render()
-    time.sleep(0.1)
+    # time.sleep(0.1)
     path_length += 1
     rewards += r
     # print(a, r, d, env_info)
@@ -54,4 +55,5 @@ while ep < test_eps:
         o = env.reset()
 env.close()
 total_rewards = np.asarray(total_rewards)
-print(f'total_rewards\n mean: {total_rewards.mean()},std: {total_rewards.std()},max: {total_rewards.max()},min: {total_rewards.min()}')
+print(
+    f'total_rewards\n mean: {total_rewards.mean()},std: {total_rewards.std()},max: {total_rewards.max()},min: {total_rewards.min()}')
