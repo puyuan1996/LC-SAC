@@ -8,7 +8,8 @@ from agent_v3 import Agent
 
 import gym
 from spinup.algos.pytorch.sac.core import SquashedGaussianMLPActor, MLPQFunction
-from spinup.algos.pytorch.sac.sac_meta_q_v3 import SAC
+# from spinup.algos.pytorch.sac.sac_meta_40_10 import SAC
+from spinup.algos.pytorch.sac.sac_meta_1 import SAC
 import pytorch_util as ptu
 
 
