@@ -55,7 +55,7 @@ class contrast(nn.Module):
 
         #  time contrastive loss
         logits = self.compute_logits(z_anchor, z_pos)
-        labels = torch.arange(logits.shape[0]).long()#.to(self.device)
+        labels = torch.arange(logits.shape[0]).long().to(self.device)
         loss_tcl = F.cross_entropy(logits, labels)
         """InfoNCE loss"""
         # #  vae loss

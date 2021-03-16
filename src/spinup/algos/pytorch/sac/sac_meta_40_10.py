@@ -24,7 +24,7 @@ class SAC(object):
                  polyak=0.995, lr=1e-3, alpha=0.2, batch_size=100, seq_len=20, start_steps=10000,
                  update_after=1000, update_every=50, num_test_episodes=10, max_ep_len=1000,
                  save_freq=10, model_path='./model/', device='cpu', train_steps=1000
-                 , collect_data_samples=10000, latent_encoder_update_every=10, args=None):
+                 , collect_data_samples=10000, args=None):
         super().__init__()
         # self.env, self.test_env = env, env
 

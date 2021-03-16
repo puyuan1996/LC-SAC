@@ -14,6 +14,8 @@ from .sampler import obtain_rollout_samples
 from tensorboardX import SummaryWriter
 import os
 import pytorch_util as ptu
+import metaworld
+import random
 
 
 class SAC(object):
@@ -24,8 +26,15 @@ class SAC(object):
                  save_freq=10, model_path='./model/', device='cpu', train_steps=1000
                  , collect_data_samples=10000, args=None):
         super().__init__()
-        self.env, self.test_env = env, env
+        # self.env, self.test_env = env, env
+
+        self.ml1 = metaworld.ML1(f'{env_name}')  # Construct the benchmark, sampling tasks
+        self.env = self.ml1.train_classes[f'{env_name}']()  # Create an environment with task `pick_place`
+        # task = random.choice(self.ml1.train_tasks)#40:
+        task = self.ml1.train_tasks[0]
+        self.env.set_task(task)  # Set task
         self.env_name = env_name
+
         self.agent = agent
         self.q1_net = q1_net
         self.q2_net = q2_net
@@ -58,8 +67,8 @@ class SAC(object):
         self.train_steps = train_steps
         self.collect_data_samples = collect_data_samples
         self.update_latent_encoder = False
-        self.latent_encoder_update_frequency = args.latent_encoder_update_frequency
-        self.rl_update_frequency = args.rl_update_frequency
+        self.latent_encoder_update_every = args.latent_encoder_update_every
+        self.rl_update_every = args.rl_update_every
         self.random_steps = args.random_steps
         self.update_begin_steps = args.update_begin_steps
         self.z_deterministic = args.z_deterministic
@@ -71,16 +80,17 @@ class SAC(object):
         # self.sampler=sampler
         # self.writer = SummaryWriter('tblogs')
         # self.model_path = args.model_path + self.env_name + f'_s{self.seed}_{self.rl_update_frequency}_{self.latent_encoder_update_frequency}/'
-        self.model_path = f'model_v3_tcl/{self.env_name}_s{self.seed}_l{args.seq_len}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_frequency}_{self.rl_update_frequency}_' \
-                          f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
-        self.test_rew_path = f'test_rew_v3_tcl/{self.env_name}_s{self.seed}_l{args.seq_len}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_frequency}_{self.rl_update_frequency}_' \
-                             f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
-        self.writer_prefix = f'{self.env_name}_s{self.seed}_l{args.seq_len}_{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_frequency}_{self.rl_update_frequency}_' \
+        prefix = './result_tcl_noQLoss_meta_ml1_train1_test1/'  # TODO
+        self.model_path = prefix + f'model_tcl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
+                                   f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
+        self.test_rew_path = prefix + f'test_rew_tcl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
+                                      f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
+        self.writer_prefix = f'{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}_{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
                              f'{args.latent_buffer_size}_{args.rl_buffer_size}_'
         self.writer = SummaryWriter(
-            f'tblogs_v3_tcl/{self.env_name}_s{self.seed}_l{args.seq_len}/{args.latent_fq}_{args.rl_fq}_'
-            f'{self.latent_encoder_update_frequency}_{self.rl_update_frequency}_'
-            f'{args.latent_buffer_size}_{args.rl_buffer_size}/')
+            prefix + f'tblogs_tcl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_'
+                     f'{self.latent_encoder_update_every}_{self.rl_update_every}_'
+                     f'{args.latent_buffer_size}_{args.rl_buffer_size}/')
         # time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
         # self.logger = EpochLogger(**logger_kwargs)
         # self.logger.save_config(locals())
@@ -122,7 +132,8 @@ class SAC(object):
         # self.latent_optimizer = Adam(agent.latent_encoder.parameters(), lr=self.latent_lr)  # TODO
         from .contrast import contrast
         self.contrast_encoder = contrast(act=False, z_dim=self.latent_dim, obs_dim=self.env.observation_space.shape[0],
-                                         encoder=self.agent.latent_encoder, encoder_targ=None, device=args.device).to(args.device)
+                                         encoder=self.agent.latent_encoder, encoder_targ=None, device=args.device).to(
+            args.device)
         self.tcl_optimizer = Adam(self.contrast_encoder.parameters(), lr=self.latent_lr)
 
     # Set up function for computing SAC Q-losses
@@ -140,7 +151,7 @@ class SAC(object):
 
         # Bellman backup for Q functions
         with torch.no_grad():
-            # Target actions come from *current* policy TODO NOTE
+            # Target actions come from *current* policy
             a2, logp_a2 = self.agent.pi.get_act_logp_from_o_z(o2, z2)
 
             # Target Q-values
@@ -254,22 +265,23 @@ class SAC(object):
 
     def update_step_latent(self, context_batch_indices, context_seq_batch):
         data = self.latent_replay_buffer.sample_data(context_batch_indices)
-        z, self.z_mu, self.z_log_std = self.agent(context_seq_batch.to(self.device))
+        z, self.z_mu, self.z_log_std = self.agent(context_seq_batch.to(self.device))  # 只取了LSTM输出的最后2个z
 
         for p in self.agent.pi.parameters():
             p.requires_grad = False
 
         self.tcl_optimizer.zero_grad()
         KLD = -0.5 * torch.sum(1 + 2 * self.z_log_std - self.z_mu.pow(2) - (2 * self.z_log_std).exp())
-        loss_q = self.compute_loss_q(data, z[0], z[1].detach())  # TODO
-        loss_tcl = self.contrast_encoder.loss_tcl(z[0], data) # TODO z[1]
-        loss_latent = self.tcl_lambda * loss_tcl + loss_q + self.kl_lambda * KLD  # TODO
+        # loss_q = self.compute_loss_q(data, z[0], z[1].detach())  # TODO
+        loss_tcl = self.contrast_encoder.loss_tcl(z[0], data)  # TODO z[1]
+        # loss_latent = self.tcl_lambda * loss_tcl + loss_q + self.kl_lambda * KLD  # TODO
+        loss_latent = self.tcl_lambda * loss_tcl + self.kl_lambda * KLD  # TODO
         # nn.utils.clip_grad_norm_(self.agent.latent_encoder.parameters(), max_norm=20, norm_type=2)  # TODO
         loss_latent.backward()
 
         if self.total_latent_train_steps % 2000 == 0:
             print('KLD', KLD.item())
-            print('loss_q', loss_q.item())
+            # print('loss_q', loss_q.item())# TODO
             print('loss_tcl', loss_tcl.item())
         self.writer.add_scalar(f'{self.writer_prefix}KLD', float(KLD.item()), self.total_train_steps)
 
@@ -321,6 +333,11 @@ class SAC(object):
         path_length = 0
         num_eps = 0
         total_rewards = []
+
+        # task = random.choice(self.ml1.train_tasks[40:])  # 40:
+        task = self.ml1.train_tasks[0]
+        self.env.set_task(task)  # Set task
+
         o = self.env.reset()
         hidden_in = (torch.zeros([1, 1, self.agent.hidden_dim], dtype=torch.float).to(self.agent.device),
                      torch.zeros([1, 1, self.agent.hidden_dim], dtype=torch.float).to(self.agent.device))
@@ -341,7 +358,7 @@ class SAC(object):
             path_length += 1
             o = next_o
 
-            if d:
+            if d or path_length >= self.max_ep_len:
                 num_eps += 1
                 # print(f'rewards:{rewards},ave rewards:{rewards / path_length},path_length:{path_length},')
                 # time.sleep(0.2)
@@ -349,6 +366,11 @@ class SAC(object):
                 rewards = 0
                 path_length = 0
                 self.env.seed(num_eps)
+
+                # task = random.choice(self.ml1.train_tasks[40:])  # 40:
+                task = self.ml1.train_tasks[0]
+                self.env.set_task(task)  # Set task
+
                 o = self.env.reset()
                 # agent.clear_z()
 
@@ -365,6 +387,11 @@ class SAC(object):
         # Prepare for interaction with environment
         total_steps = self.steps_per_epoch * self.epochs
         start_time = time.time()
+
+        # task = random.choice(self.ml1.train_tasks[:40])  # TODO
+        task = self.ml1.train_tasks[0]
+        self.env.set_task(task)  # Set task
+
         o, ep_ret, ep_len = self.env.reset(), 0, 0
         z = np.zeros(self.agent.latent_dim)  # TODO
         z2 = np.zeros(self.agent.latent_dim)
@@ -405,6 +432,9 @@ class SAC(object):
             # that isn't based on the agent's state)
             d = False if ep_len == self.max_ep_len else d
 
+            if ep_len == self.max_ep_len:  # TODO
+                d = True
+
             # Store experience to replay buffer
             self.rl_replay_buffer.add_sample(o, a, r, o2, d, z)
             self.latent_replay_buffer.add_sample(o, a, r, o2, d)
@@ -415,6 +445,11 @@ class SAC(object):
             # End of trajectory handling
             if d or (ep_len == self.max_ep_len):
                 ep_ret_list.append(ep_ret)
+
+                # task = random.choice(self.ml1.train_tasks[:40])  # TODO
+                task = self.ml1.train_tasks[0]
+                self.env.set_task(task)  # Set task
+
                 o, ep_ret, ep_len = self.env.reset(), 0, 0
                 hidden_in = (torch.zeros([1, 1, self.agent.hidden_dim], dtype=torch.float).to(self.agent.device),
                              torch.zeros([1, 1, self.agent.hidden_dim], dtype=torch.float).to(self.agent.device))
@@ -430,8 +465,8 @@ class SAC(object):
                 ep_ret_list = []
 
             # Update handling
-            if self.total_env_steps >= self.update_begin_steps and self.total_env_steps % self.rl_update_frequency == 0:
-                for j in range(self.rl_update_frequency // self.rl_fq):  # 200):
+            if self.total_env_steps >= self.update_begin_steps and self.total_env_steps % self.rl_update_every == 0:
+                for j in range(self.rl_update_every // self.rl_fq):  # 200):
                     self.train_step_rl(self.update_latent_encoder)  # TODO
                     # self.sac_update_step()
                     # self.update_latent_encoder = False
@@ -459,9 +494,9 @@ class SAC(object):
                         torch.save(self.q1_net.state_dict(), self.model_path + f'q1_net_{epoch}.pt')
                         torch.save(self.q2_net.state_dict(), self.model_path + f'q2_net_{epoch}.pt')
 
-            if self.total_env_steps >= self.update_begin_steps and self.total_env_steps % self.latent_encoder_update_frequency == 0:  # 服务器
+            if self.total_env_steps >= self.update_begin_steps and self.total_env_steps % self.latent_encoder_update_every == 0:  # 服务器
                 self.update_latent_encoder = True
-                for j in range(self.latent_encoder_update_frequency // self.latent_fq):  # 5000//5=1000
+                for j in range(self.latent_encoder_update_every // self.latent_fq):  # 5000//5=1000
                     self.train_step_latent()  # T
                     self.total_latent_train_steps += 1
 

@@ -9,7 +9,8 @@ from agent_v3 import Agent
 import gym
 from spinup.algos.pytorch.sac.core import SquashedGaussianMLPActor, MLPQFunction
 # from spinup.algos.pytorch.sac.sac_meta_40_10 import SAC
-from spinup.algos.pytorch.sac.sac_meta_1 import SAC
+# from spinup.algos.pytorch.sac.sac_meta_10 import SAC
+from spinup.algos.pytorch.sac.sac_q_tcl_meta_1 import SAC
 import pytorch_util as ptu
 
 
@@ -35,8 +36,8 @@ def run(args):
     latent_encoder_hidden_dim = args.latent_encoder_hidden_dim  # 128  # 128
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if args.cuda else "cpu")
-    cuda_id=args.cuda_id
-    torch.cuda.set_device(cuda_id)  # id=0, 1, 2 ,4等
+    # cuda_id=args.cuda_id
+    # torch.cuda.set_device(cuda_id)  # id=0, 1, 2 ,4等 TODO
     args.device = device  # 'cpu'
     print('-' * 10)
     print(f'device: {args.device}')
@@ -70,7 +71,7 @@ def run(args):
                     seq_len=args.seq_len, lr=args.sac_lr, batch_size=args.latent_batch_size,
                     save_freq=args.save_freq, model_path=args.model_path, device=args.device,
                     train_steps=args.train_steps, collect_data_samples=args.collect_data_samples,
-                    latent_encoder_update_every=args.latent_encoder_update_every,
+                    # latent_encoder_update_every=args.latent_encoder_update_every,
                     args=args)
 
     # optionally load pre-trained weights
@@ -97,7 +98,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--env', type=str,
-                        default='reach-v2')  # Hopper-v2')Striker-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
+                        default='push-v1')  # Hopper-v2')Striker-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
     # reach-v1  push-v1 pick-place-v1
     parser.add_argument('--max_ep_len', type=int, default=200)  # 默认是1000
     parser.add_argument('--save_freq', type=int, default=50)  # 单位为epoch, 默认是1
@@ -123,9 +124,10 @@ if __name__ == "__main__":
     parser.add_argument('--update_begin_steps', type=int, default=2000)  # 1000
 
     parser.add_argument('--kl_lambda', type=float, default=0.1)
+    parser.add_argument('--tcl_lambda', type=float, default=1)
+
     parser.add_argument('--latent_lr', type=float, default=3e-4)  # 1e-6
     parser.add_argument('--sac_lr', type=float, default=3e-4)  # 1e-3)
-    parser.add_argument('--tcl_lambda', type=float, default=0.5)
     parser.add_argument('--env_id_str', type=list, default=[2, 1, 0] + list(range(3, 12)))
     parser.add_argument('--z_deterministic', type=bool, default=False)
     parser.add_argument('--pi_deterministic', type=bool, default=False)
@@ -133,9 +135,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--latent_fq', type=int, default=1)  # 5
     parser.add_argument('--rl_fq', type=int, default=1)  # 5
-    parser.add_argument('-latent_ue', '--latent_encoder_update_every', type=int, default=50)  # 5000
+    parser.add_argument('-latent_ue', '--latent_encoder_update_every', type=int, default=500)  # 5000
     parser.add_argument('-rl_ue', '--rl_update_every', type=int, default=50)  # 1e4
-    parser.add_argument('-latent_bs', '--latent_buffer_size', type=int, default=5000)  # 50000
+    parser.add_argument('-latent_bs', '--latent_buffer_size', type=int, default=1000000)  # 50000
     parser.add_argument('-rl_bs', '--rl_buffer_size', type=int, default=1000000)  # 5000
 
     parser.add_argument('--seq_len', type=int, default=20)  # 20
