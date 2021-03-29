@@ -16,6 +16,7 @@ import os
 import pytorch_util as ptu
 import metaworld
 import random
+
 ml10 = metaworld.ML10()  # Construct the benchmark, sampling tasks
 
 training_envs = []
@@ -25,6 +26,7 @@ for name, env_cls in ml10.train_classes.items():
                           if task.env_name == name])
     env.set_task(task)
     training_envs.append(env)
+
 
 class SAC(object):
     def __init__(self, env, env_name, agent, q1_net, q2_net, seed=0,
@@ -37,7 +39,7 @@ class SAC(object):
         # self.env, self.test_env = env, env
 
         self.env_name = env_name
-        self.env= random.choice(training_envs)
+        self.env = random.choice(training_envs)
 
         self.agent = agent
         self.q1_net = q1_net
@@ -83,7 +85,7 @@ class SAC(object):
         self.latent_dim = args.latent_dim
         self.cpl_lambda = args.cpl_lambda
         prefix = './result_cplsar_noQLoss_mt10_train_z_det' if self.z_deterministic else './result_cplsar_noQLoss_mt10_train_z_prob'  # TODO
-        prefix =  prefix + f'_cbatch{args.latent_batch_size}/'
+        prefix = prefix + f'_cbatch{args.latent_batch_size}/'
         self.model_path = prefix + f'model_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
                                    f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
         self.test_rew_path = prefix + f'test_rew_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
@@ -135,8 +137,10 @@ class SAC(object):
         # self.latent_optimizer = Adam(agent.latent_encoder.parameters(), lr=self.latent_lr)  # TODO
         from .contrast_sar import contrast
         self.contrast_encoder = contrast(act=False, z_dim=self.latent_dim,
-                                         obs_dim=self.env.observation_space.shape[0] + self.env.action_space.shape[0] + 1,
-                                         encoder=self.agent.latent_encoder, encoder_targ=None, device=args.device).to(args.device)
+                                         obs_dim=self.env.observation_space.shape[0] + self.env.action_space.shape[
+                                             0] + 1,
+                                         encoder=self.agent.latent_encoder, encoder_targ=None, device=args.device).to(
+            args.device)
         self.cpl_optimizer = Adam(self.contrast_encoder.parameters(), lr=self.latent_lr)
 
     # Set up function for computing SAC Q-losses
@@ -340,7 +344,8 @@ class SAC(object):
         # task = random.choice(self.ml1.train_tasks[:10])  # TODO
         # # task = self.ml1.train_tasks[0]
         # self.env.set_task(task)  # Set task
-        self.env = random.choice(training_envs)
+        # self.env = random.choice(training_envs)
+        self.env = training_envs[num_eps]
 
         o = self.env.reset()
         hidden_in = (torch.zeros([1, 1, self.agent.hidden_dim], dtype=torch.float).to(self.agent.device),
@@ -370,11 +375,12 @@ class SAC(object):
                 rewards = 0
                 path_length = 0
                 self.env.seed(num_eps)
-
+                # test_success_rate=env_info['success']
                 # task = random.choice(self.ml1.train_tasks[:10])  # TODO
                 # # task = self.ml1.train_tasks[0]
                 # self.env.set_task(task)  # Set task
-                self.env = random.choice(training_envs)
+                # self.env = random.choice(training_envs)
+                self.env = training_envs[num_eps]
 
                 o = self.env.reset()
                 # agent.clear_z()
