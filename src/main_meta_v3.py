@@ -12,7 +12,7 @@ from spinup.algos.pytorch.sac.core import SquashedGaussianMLPActor, MLPQFunction
 # from spinup.algos.pytorch.sac.sac_meta_10 import SAC
 # from spinup.algos.pytorch.sac.sac_cpl_sar_meta_1 import SAC
 from spinup.algos.pytorch.sac.sac_cpl_sar_meta_10 import SAC
-from spinup.algos.pytorch.sac.sac_cpl_sar_mt10 import SAC
+# from spinup.algos.pytorch.sac.sac_cpl_sar_mt10 import SAC
 # from spinup.algos.pytorch.sac.sac_cpl_meta_1 import SAC
 # from spinup.algos.pytorch.sac.csac_cpl_s import SAC
 # from spinup.algos.pytorch.sac.csac_cpl_sar import SAC
