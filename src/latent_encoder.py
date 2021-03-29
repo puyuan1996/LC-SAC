@@ -86,7 +86,7 @@ LOG_STD_MAX = 2
 LOG_STD_MIN = -20
 
 
-class RecurrentLatentEncoder2head(nn.Module):
+class RecurrentLatentEncoder2head(nn.Module): #TODO
     '''
     encode context via recurrent network
     '''

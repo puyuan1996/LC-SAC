@@ -3,12 +3,13 @@ import random
 import time
 import numpy as np
 
-# print(metaworld.ML1.ENV_NAMES)  # Check out the available environments
-env_id = 'reach-v1'  # 'pick-place-v1'
+print(metaworld.ML1.ENV_NAMES)  # Check out the available environments
+env_id = 'pick-place-v1'  # 'pick-place-v1'
 ml1 = metaworld.ML1(env_id)  # Construct the benchmark, sampling tasks
 
 env = ml1.train_classes[env_id]()  # Create an environment with task `pick_place`
-task = random.choice(ml1.train_tasks[:40])
+# task = random.choice(ml1.train_tasks[:40])
+task = ml1.train_tasks[20]
 env.set_task(task)  # Set task
 
 # obs = env.reset()  # Reset environment
@@ -18,7 +19,7 @@ env.set_task(task)  # Set task
 
 # print(env.observation_space, env.action_space)
 # print(env.observation_space.shape, env.action_space.shape)
-test_eps = 1
+test_eps = 10
 rewards = 0
 path_length = 0
 ep = 0
@@ -33,14 +34,14 @@ while ep < test_eps:
     # print(img.shape) #(400, 600, 3)
     # plt.savefig('img.png',img)
     env.render()
-    # time.sleep(0.1)
+    # time.sleep(10)
     path_length += 1
     rewards += r
     # print(a, r, d, env_info)
     o = next_o
 
     if d or path_length>=201:
-        # time.sleep(0.2)
+        time.sleep(10)
         print(f'ep:{ep},rewards:{rewards},path_length:{path_length},')  # ,ave rewards:{rewards / path_length}
         total_rewards.append(rewards)
         rewards = 0

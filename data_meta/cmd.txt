@@ -1,0 +1,8 @@
+执行tensorboard--logdir=[绝对路径] 得到reward的.csv文件
+
+在ubuntu上执行可以 python plot.py ./human -s=10 
+
+在Win10上不行，需要    
+parser.add_argument('--logdir', nargs='*')
+args.logdir = ['D:\study\code\\backup\LC-SAC\data_meta\sac_meta\sac_push-v2'] 
+

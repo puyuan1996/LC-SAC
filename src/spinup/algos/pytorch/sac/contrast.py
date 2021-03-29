@@ -44,7 +44,7 @@ class contrast(nn.Module):
         return logits
 
 
-    def loss_tcl(self, z_anchor,data):
+    def loss_cpl(self, z_anchor,data):
         z_pos = data['obs'].to(self.device)
 
         # z_a, mu_a, std_a = self.clrl_t.encode(o_anchor)
@@ -56,10 +56,10 @@ class contrast(nn.Module):
         #  time contrastive loss
         logits = self.compute_logits(z_anchor, z_pos)
         labels = torch.arange(logits.shape[0]).long().to(self.device)
-        loss_tcl = F.cross_entropy(logits, labels)
+        loss_cpl = F.cross_entropy(logits, labels)
         """InfoNCE loss"""
         # #  vae loss
         # rec_obs = self.clrl_t.encoder.decode(z_a)
         # loss_vae = F.mse_loss(rec_obs, o_anchor)
 
-        return loss_tcl
+        return loss_cpl

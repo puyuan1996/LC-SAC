@@ -10,7 +10,11 @@ import gym
 from spinup.algos.pytorch.sac.core import SquashedGaussianMLPActor, MLPQFunction
 # from spinup.algos.pytorch.sac.sac_meta_40_10 import SAC
 # from spinup.algos.pytorch.sac.sac_meta_10 import SAC
-from spinup.algos.pytorch.sac.sac_q_tcl_meta_1 import SAC
+# from spinup.algos.pytorch.sac.sac_cpl_sar_meta_1 import SAC
+from spinup.algos.pytorch.sac.sac_cpl_sar_meta_10 import SAC
+# from spinup.algos.pytorch.sac.sac_cpl_meta_1 import SAC
+# from spinup.algos.pytorch.sac.csac_cpl_s import SAC
+# from spinup.algos.pytorch.sac.csac_cpl_sar import SAC
 import pytorch_util as ptu
 
 
@@ -68,7 +72,7 @@ def run(args):
 
     algorithm = SAC(env, args.env, agent, q1_net, q2_net,
                     gamma=args.gamma, seed=args.seed, epochs=args.epochs, max_ep_len=args.max_ep_len,
-                    seq_len=args.seq_len, lr=args.sac_lr, batch_size=args.latent_batch_size,
+                    seq_len=args.seq_len, lr=args.sac_lr,
                     save_freq=args.save_freq, model_path=args.model_path, device=args.device,
                     train_steps=args.train_steps, collect_data_samples=args.collect_data_samples,
                     # latent_encoder_update_every=args.latent_encoder_update_every,
@@ -98,7 +102,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--env', type=str,
-                        default='push-v1')  # Hopper-v2')Striker-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
+                        default='pick-place-v1')  # Hopper-v2')Striker-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
     # reach-v1  push-v1 pick-place-v1
     parser.add_argument('--max_ep_len', type=int, default=200)  # 默认是1000
     parser.add_argument('--save_freq', type=int, default=50)  # 单位为epoch, 默认是1
@@ -123,27 +127,28 @@ if __name__ == "__main__":
     parser.add_argument('--random_steps', type=int, default=0)  # 10000
     parser.add_argument('--update_begin_steps', type=int, default=2000)  # 1000
 
-    parser.add_argument('--kl_lambda', type=float, default=0.1)
-    parser.add_argument('--tcl_lambda', type=float, default=1)
+    parser.add_argument('--kl_lambda', type=float, default=0) #TODO 0.1
+    parser.add_argument('--cpl_lambda', type=float, default=1)
 
     parser.add_argument('--latent_lr', type=float, default=3e-4)  # 1e-6
     parser.add_argument('--sac_lr', type=float, default=3e-4)  # 1e-3)
     parser.add_argument('--env_id_str', type=list, default=[2, 1, 0] + list(range(3, 12)))
-    parser.add_argument('--z_deterministic', type=bool, default=False)
+    parser.add_argument('--z_deterministic', type=bool, default=True) #TODO False
     parser.add_argument('--pi_deterministic', type=bool, default=False)
-    parser.add_argument('--latent_batch_size', type=int, default=128)
+    parser.add_argument('--rl_batch_size', type=int, default=128)
+    parser.add_argument('--latent_batch_size', type=int, default=128) #256
 
     parser.add_argument('--latent_fq', type=int, default=1)  # 5
     parser.add_argument('--rl_fq', type=int, default=1)  # 5
-    parser.add_argument('-latent_ue', '--latent_encoder_update_every', type=int, default=500)  # 5000
+    parser.add_argument('-latent_ue', '--latent_encoder_update_every', type=int, default=5000)  # 5000
     parser.add_argument('-rl_ue', '--rl_update_every', type=int, default=50)  # 1e4
     parser.add_argument('-latent_bs', '--latent_buffer_size', type=int, default=1000000)  # 50000
-    parser.add_argument('-rl_bs', '--rl_buffer_size', type=int, default=1000000)  # 5000
+    parser.add_argument('-rl_bs', '--rl_buffer_size', type=int, default=100000)  # 1e6
 
-    parser.add_argument('--seq_len', type=int, default=20)  # 20
+    parser.add_argument('--seq_len', type=int, default=20)  # TODO 20
     parser.add_argument('--latent_dim', type=int, default=5)  # TODO
     parser.add_argument('--cuda_id', type=int, default=0)  # TODO
-
+    parser.add_argument('--n_steps', type=float, default=2e6)  # TODO
 
     args = parser.parse_args()
     print('-' * 10)
@@ -154,6 +159,7 @@ if __name__ == "__main__":
     print(f'latent_buffer_size:{args.latent_buffer_size},rl_buffer_size:{args.rl_buffer_size}')
     print(f'cuda_id:{args.cuda_id}')
     print(f'train_z_deterministic:{args.z_deterministic}')
+    print(f'n_steps:{args.n_steps}')
     print('-' * 10)
 
 
@@ -167,15 +173,17 @@ if __name__ == "__main__":
         torch.manual_seed(j)
         args.use_next_obs_in_context = False
         # i = get_key(env_id_dict, args.env)[0]
-        i = 2
-        if i == 2:  # Hopper meta_world
-            args.epochs = 250  # 3e6
-        elif i in [0, 1, 7, 9]:  # Ant,HalfCheetah, Swimmer,LunarLanderContinuous
-            args.epochs = 300  # 3e6
-        elif i in [3, 11]:  # Humanoid,BipedalWalkerHardCore
-            args.epochs = 500  # 10e6
-        else:  # Striker,Pusher,Reacher,Thrower, BipedalWalker
-            args.epochs = 400  # 4e6
+        args.epochs = int(args.n_steps/args.steps_per_epoch)
+        print(f'epochs:{args.epochs}')
+        # i = 2
+        # if i == 2:  # Hopper meta_world
+        #     args.epochs = 250  # 3e6
+        # elif i in [0, 1, 7, 9]:  # Ant,HalfCheetah, Swimmer,LunarLanderContinuous
+        #     args.epochs = 300  # 3e6
+        # elif i in [3, 11]:  # Humanoid,BipedalWalkerHardCore
+        #     args.epochs = 500  # 10e6
+        # else:  # Striker,Pusher,Reacher,Thrower, BipedalWalker
+        #     args.epochs = 400  # 4e6
         print('-' * 10)
         print(f'experiment {args.env} seed {j} begin!')
         print('-' * 10)
