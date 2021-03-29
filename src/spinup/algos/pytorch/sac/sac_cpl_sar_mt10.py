@@ -345,7 +345,8 @@ class SAC(object):
         # # task = self.ml1.train_tasks[0]
         # self.env.set_task(task)  # Set task
         # self.env = random.choice(training_envs)
-        self.env = training_envs[num_eps]
+        test_env_id=num_eps%10
+        self.env = training_envs[test_env_id]
 
         o = self.env.reset()
         hidden_in = (torch.zeros([1, 1, self.agent.hidden_dim], dtype=torch.float).to(self.agent.device),
@@ -380,7 +381,8 @@ class SAC(object):
                 # # task = self.ml1.train_tasks[0]
                 # self.env.set_task(task)  # Set task
                 # self.env = random.choice(training_envs)
-                self.env = training_envs[num_eps]
+                test_env_id = num_eps % 10
+                self.env = training_envs[test_env_id]
 
                 o = self.env.reset()
                 # agent.clear_z()
@@ -402,7 +404,10 @@ class SAC(object):
         # task = random.choice(self.ml1.train_tasks[:10])  # TODO
         # # task = self.ml1.train_tasks[0]
         # self.env.set_task(task)  # Set task
-        self.env = random.choice(training_envs)
+        # self.env = random.choice(training_envs)
+        train_num_eps=0
+        train_env_id = train_num_eps % 10
+        self.env = training_envs[train_env_id]
 
         o, ep_ret, ep_len = self.env.reset(), 0, 0
         z = np.zeros(self.agent.latent_dim)  # TODO
@@ -456,12 +461,16 @@ class SAC(object):
             # z2 = z
             # End of trajectory handling
             if d or (ep_len == self.max_ep_len):
+
                 ep_ret_list.append(ep_ret)
 
                 # task = random.choice(self.ml1.train_tasks[:10])  # TODO
                 # # task = self.ml1.train_tasks[0]
                 # self.env.set_task(task)  # Set task
-                self.env = random.choice(training_envs)
+                # self.env = random.choice(training_envs)
+                train_num_eps += 1  # TODO
+                train_env_id = train_num_eps % 10
+                self.env = training_envs[train_env_id]
 
                 o, ep_ret, ep_len = self.env.reset(), 0, 0
                 hidden_in = (torch.zeros([1, 1, self.agent.hidden_dim], dtype=torch.float).to(self.agent.device),
