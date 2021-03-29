@@ -40,8 +40,8 @@ def run(args):
     latent_encoder_hidden_dim = args.latent_encoder_hidden_dim  # 128  # 128
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if args.cuda else "cpu")
-    # cuda_id=args.cuda_id
-    # torch.cuda.set_device(cuda_id)  # id=0, 1, 2 ,4等 TODO
+    cuda_id=args.cuda_id
+    torch.cuda.set_device(cuda_id)  # id=0, 1, 2 ,4等 TODO
     args.device = device  # 'cpu'
     print('-' * 10)
     print(f'device: {args.device}')
