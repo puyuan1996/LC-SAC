@@ -112,6 +112,7 @@ transfer-gym/
 *.xml
 
 data
+data*
 plot
 result*
 #metaworld
