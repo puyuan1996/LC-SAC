@@ -130,6 +130,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--kl_lambda', type=float, default=0) #TODO 0.1
     parser.add_argument('--cpl_lambda', type=float, default=1)
+    parser.add_argument('--ql_lambda', type=float, default=0.1)
 
     parser.add_argument('--latent_lr', type=float, default=3e-4)  # 1e-6
     parser.add_argument('--sac_lr', type=float, default=3e-4)  # 1e-3)
@@ -154,6 +155,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print('-' * 10)
     print(f'latent_dim:{args.latent_dim}')
+    print(f'ql_lambda:{args.ql_lambda}',f'kl_lambda:{args.kl_lambda}')
     print(f'seq_len:{args.seq_len}')
     print(f'latent_fq:{args.latent_fq},rl_fq:{args.rl_fq}')
     print(f'latent_ue:{args.latent_encoder_update_every},rl_ue:{args.rl_update_every}')

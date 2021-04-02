@@ -38,8 +38,9 @@ def run(args):
     latent_encoder_hidden_dim = args.latent_encoder_hidden_dim  # 128  # 128
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if args.cuda else "cpu")
-    # cuda_id=args.cuda_id
-    # torch.cuda.set_device(cuda_id)  # id=0, 1, 2 ,4等 TODO
+    torch.cuda.set_device(args.cuda_id)  # id=0, 1, 2 ,4等 TODO
+    print(f'cuda_id:{args.cuda_id}')
+
     args.device = device  # 'cpu'
     print('-' * 10)
     print(f'device: {args.device}')
@@ -139,14 +140,15 @@ if __name__ == "__main__":
 
     parser.add_argument('--latent_fq', type=int, default=1)  # 5
     parser.add_argument('--rl_fq', type=int, default=1)  # 5
-    parser.add_argument('-latent_ue', '--latent_encoder_update_every', type=int, default=500)  # 5000
+    parser.add_argument('-latent_ue', '--latent_encoder_update_every', type=int, default=5000)  # 5000
     parser.add_argument('-rl_ue', '--rl_update_every', type=int, default=50)  # 1e4
     parser.add_argument('-latent_bs', '--latent_buffer_size', type=int, default=1000000)  # 50000
     parser.add_argument('-rl_bs', '--rl_buffer_size', type=int, default=1000000)  # 5000
 
     parser.add_argument('--seq_len', type=int, default=20)  # 20
-    parser.add_argument('--latent_dim', type=int, default=20)  # TODO 5
+    parser.add_argument('--latent_dim', type=int, default=50)  # TODO 5
     parser.add_argument('--cuda_id', type=int, default=0)  # TODO
+    parser.add_argument('--n_steps', type=float, default=3e6)  # TODO
 
 
     args = parser.parse_args()
@@ -156,7 +158,7 @@ if __name__ == "__main__":
     print(f'latent_fq:{args.latent_fq},rl_fq:{args.rl_fq}')
     print(f'latent_ue:{args.latent_encoder_update_every},rl_ue:{args.rl_update_every}')
     print(f'latent_buffer_size:{args.latent_buffer_size},rl_buffer_size:{args.rl_buffer_size}')
-    print(f'cuda_id:{args.cuda_id}')
+
     print(f'train_z_deterministic:{args.z_deterministic}')
     print('-' * 10)
 

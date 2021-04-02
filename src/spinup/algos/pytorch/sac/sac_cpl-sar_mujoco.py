@@ -78,7 +78,7 @@ class SAC(object):
         self.latent_fq = args.latent_fq
         self.latent_dim = args.latent_dim
         self.cpl_lambda = args.cpl_lambda
-        prefix = './result_cplsar_noQLoss_train_z_det' if self.z_deterministic else './result_cplsar_noQLoss_test1_train_z_prob'  # TODO
+        prefix = './result_cplsar_noQLoss_train_z_det' if self.z_deterministic else './result_cplsar_noQLoss_train_z_prob'  # TODO
         prefix =  prefix + f'_cbatch{args.latent_batch_size}/'
         self.model_path = prefix + f'model_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
                                    f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
