@@ -11,7 +11,8 @@ from spinup.algos.pytorch.sac.core import SquashedGaussianMLPActor, MLPQFunction
 # from spinup.algos.pytorch.sac.sac_meta_40_10 import SAC
 # from spinup.algos.pytorch.sac.sac_meta_10 import SAC
 # from spinup.algos.pytorch.sac.sac_cpl_sar_meta_1 import SAC
-from spinup.algos.pytorch.sac.sac_cpl-sar_meta-10 import SAC
+from spinup.algos.pytorch.sac.sac_cpl_sar_ql_meta_1 import SAC
+
 # from spinup.algos.pytorch.sac.sac_cpl-sar_mt10 import SAC
 # from spinup.algos.pytorch.sac.sac_cpl_meta_1 import SAC
 # from spinup.algos.pytorch.sac.csac_cpl_s import SAC
@@ -51,12 +52,12 @@ def run(args):
     if recurrent:
         latent_encoder = RecurrentLatentEncoder2head(input_dim=latent_encoder_input_dim, latent_dim=latent_dim,
                                                      hidden_dim=latent_encoder_hidden_dim, device=args.device)
-    else:
-        latent_encoder = MlpEncoder(
-            hidden_sizes=(200, 200, 200),
-            input_size=latent_encoder_input_dim,
-            output_size=latent_encoder_output_dim,
-        )
+    # else:
+    #     latent_encoder = MlpEncoder(
+    #         hidden_sizes=(200, 200, 200),
+    #         input_size=latent_encoder_input_dim,
+    #         output_size=latent_encoder_output_dim,
+    #     )
 
     # hidden_sizes = (net_size, net_size, net_size)
     hidden_sizes = (256, 256)
