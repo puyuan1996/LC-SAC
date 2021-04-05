@@ -10,7 +10,7 @@ import gym
 from spinup.algos.pytorch.sac.core import SquashedGaussianMLPActor, MLPQFunction
 # from spinup.algos.pytorch.sac.sac_meta_40_10 import SAC
 # from spinup.algos.pytorch.sac.sac_meta_10 import SAC
-from spinup.algos.pytorch.sac.sac_cpl_sar import SAC
+from spinup.algos.pytorch.sac.sac_cpl_sar_mujoco import SAC
 # from spinup.algos.pytorch.sac.csac_cpl_s import SAC
 # from spinup.algos.pytorch.sac.csac_cpl_sar import SAC
 import pytorch_util as ptu
@@ -125,7 +125,8 @@ if __name__ == "__main__":
     parser.add_argument('--train_steps', type=int, default=50)
     parser.add_argument('--collect_data_samples', type=int, default=50)
     parser.add_argument('--random_steps', type=int, default=0)  # 10000
-    parser.add_argument('--update_begin_steps', type=int, default=2000)  # 1000
+    parser.add_argument('--update_begin_steps_rl', type=int, default=100000)  # 1000
+    parser.add_argument('--update_begin_steps_latent', type=int, default=0)  # 1000
 
     parser.add_argument('--kl_lambda', type=float, default=0) #TODO 0.1
     parser.add_argument('--cpl_lambda', type=float, default=1)

@@ -10,8 +10,8 @@ import gym
 from spinup.algos.pytorch.sac.core import SquashedGaussianMLPActor, MLPQFunction
 # from spinup.algos.pytorch.sac.sac_meta_40_10 import SAC
 # from spinup.algos.pytorch.sac.sac_meta_10 import SAC
-# from spinup.algos.pytorch.sac.sac_cpl_sar_meta_1 import SAC
-from spinup.algos.pytorch.sac.sac_cpl_sar_ql_meta_1 import SAC
+from spinup.algos.pytorch.sac.sac_cpl_sar_meta_1 import SAC
+# from spinup.algos.pytorch.sac.sac_cpl_sar_ql_meta_1 import SAC
 
 # from spinup.algos.pytorch.sac.sac_cpl-sar_mt10 import SAC
 # from spinup.algos.pytorch.sac.sac_cpl_meta_1 import SAC

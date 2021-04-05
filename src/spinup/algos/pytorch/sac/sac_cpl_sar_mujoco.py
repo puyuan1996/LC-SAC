@@ -71,7 +71,8 @@ class SAC(object):
         self.latent_encoder_update_every = args.latent_encoder_update_every
         self.rl_update_every = args.rl_update_every
         self.random_steps = args.random_steps
-        self.update_begin_steps = args.update_begin_steps
+        self.update_begin_steps_rl = args.update_begin_steps_rl
+        self.update_begin_steps_latent = args.update_begin_steps_latent
         self.z_deterministic = args.z_deterministic
         self.pi_deterministic = args.pi_deterministic
         self.rl_fq = args.rl_fq
@@ -79,7 +80,8 @@ class SAC(object):
         self.latent_dim = args.latent_dim
         self.cpl_lambda = args.cpl_lambda
         prefix = './result_cplsar_noQLoss_train_z_det' if self.z_deterministic else './result_cplsar_noQLoss_train_z_prob'  # TODO
-        prefix =  prefix + f'_cbatch{args.latent_batch_size}/'
+        prefix = prefix + f'_cbatch{args.latent_batch_size}/'
+        prefix = prefix + f'rlbegin{args.update_begin_steps_rl }/'
         self.model_path = prefix + f'model_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
                                    f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
         self.test_rew_path = prefix + f'test_rew_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
@@ -464,7 +466,7 @@ class SAC(object):
                 ep_ret_list = []
 
             # Update handling
-            if self.total_env_steps >= self.update_begin_steps and self.total_env_steps % self.rl_update_every == 0:
+            if self.total_env_steps >= self.update_begin_steps_rl and self.total_env_steps % self.rl_update_every == 0:
                 for j in range(self.rl_update_every // self.rl_fq):  # 200):
                     self.train_step_rl(self.update_latent_encoder)  # TODO
                     # self.sac_update_step()
@@ -493,7 +495,7 @@ class SAC(object):
                         torch.save(self.q1_net.state_dict(), self.model_path + f'q1_net_{epoch}.pt')
                         torch.save(self.q2_net.state_dict(), self.model_path + f'q2_net_{epoch}.pt')
 
-            if self.total_env_steps >= self.update_begin_steps and self.total_env_steps % self.latent_encoder_update_every == 0:  # 服务器
+            if self.total_env_steps >= self.update_begin_steps_latent and self.total_env_steps % self.latent_encoder_update_every == 0:  # 服务器
                 self.update_latent_encoder = True
                 for j in range(self.latent_encoder_update_every // self.latent_fq):  # 5000//5=1000
                     self.train_step_latent()  # T
