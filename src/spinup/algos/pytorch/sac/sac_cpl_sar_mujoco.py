@@ -82,14 +82,14 @@ class SAC(object):
         prefix = './result_cplsar_noQLoss_train_z_det' if self.z_deterministic else './result_cplsar_noQLoss_train_z_prob'  # TODO
         prefix = prefix + f'_cbatch{args.latent_batch_size}/'
         prefix = prefix + f'rlbegin{args.update_begin_steps_rl }/'
-        self.model_path = prefix + f'model_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
+        self.model_path = prefix + f'model_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}_maxl{args.max_ep_len}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
                                    f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
-        self.test_rew_path = prefix + f'test_rew_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
+        self.test_rew_path = prefix + f'test_rew_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}_maxl{args.max_ep_len}/{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
                                       f'{args.latent_buffer_size}_{args.rl_buffer_size}/'
-        self.writer_prefix = f'{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}_{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
+        self.writer_prefix = f'{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}_maxl{args.max_ep_len}_{args.latent_fq}_{args.rl_fq}_{self.latent_encoder_update_every}_{self.rl_update_every}_' \
                              f'{args.latent_buffer_size}_{args.rl_buffer_size}_'
         self.writer = SummaryWriter(
-            prefix + f'tblogs_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}/{args.latent_fq}_{args.rl_fq}_'
+            prefix + f'tblogs_cpl_v3/{self.env_name}_s{self.seed}_l{args.seq_len}_d{args.latent_dim}_maxl{args.max_ep_len}/{args.latent_fq}_{args.rl_fq}_'
                      f'{self.latent_encoder_update_every}_{self.rl_update_every}_'
                      f'{args.latent_buffer_size}_{args.rl_buffer_size}/')
         # time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())

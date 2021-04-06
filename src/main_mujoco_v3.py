@@ -154,6 +154,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     print('-' * 10)
+
+    print(f'max_ep_len:{args.max_ep_len}')
     print(f'latent_dim:{args.latent_dim}')
     print(f'seq_len:{args.seq_len}')
     print(f'latent_fq:{args.latent_fq},rl_fq:{args.rl_fq}')
