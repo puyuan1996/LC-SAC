@@ -1,19 +1,15 @@
-# -*- coding: utf-8 -*
 import os
 import torch
 import torch.nn as nn
 
 from latent_encoder import RecurrentLatentEncoder, RecurrentLatentEncoder2head, RecurrentLatentEncoderDet
 from agent_v3 import Agent
-
 import gym
 from spinup.algos.pytorch.sac.core import SquashedGaussianMLPActor, MLPQFunction
-# from spinup.algos.pytorch.sac.sac_meta_40_10 import SAC
-# from spinup.algos.pytorch.sac.sac_meta_10 import SAC
 from spinup.algos.pytorch.sac.sac_cpl_sar_mujoco import SAC
-# from spinup.algos.pytorch.sac.csac_cpl_s import SAC
-# from spinup.algos.pytorch.sac.csac_cpl_sar import SAC
 import pytorch_util as ptu
+import time
+import numpy as np
 
 
 def run(args):
@@ -49,12 +45,6 @@ def run(args):
     if recurrent:
         latent_encoder = RecurrentLatentEncoder2head(input_dim=latent_encoder_input_dim, latent_dim=latent_dim,
                                                      hidden_dim=latent_encoder_hidden_dim, device=args.device)
-    else:
-        latent_encoder = MlpEncoder(
-            hidden_sizes=(200, 200, 200),
-            input_size=latent_encoder_input_dim,
-            output_size=latent_encoder_output_dim,
-        )
 
     # hidden_sizes = (net_size, net_size, net_size)
     hidden_sizes = (256, 256)
@@ -62,7 +52,7 @@ def run(args):
 
     policy = SquashedGaussianMLPActor(obs_dim + latent_dim, act_dim, hidden_sizes, activation, act_limit).to(
         args.device)
-    q1_net = MLPQFunction(obs_dim + latent_dim, act_dim, hidden_sizes, activation).to(args.device) #MLP
+    q1_net = MLPQFunction(obs_dim + latent_dim, act_dim, hidden_sizes, activation).to(args.device)  # MLP
     q2_net = MLPQFunction(obs_dim + latent_dim, act_dim, hidden_sizes, activation).to(args.device)
     agent = Agent(latent_dim, latent_encoder_hidden_dim, latent_encoder, policy, args).to(args.device)
 
@@ -86,25 +76,62 @@ def run(args):
         policy.load_state_dict(torch.load(os.path.join(model_path, 'pi.pth')))
         print('load model successfully')
 
-    # run the algorithm
-    algorithm.train()
+    print(obs_dim, act_dim)
+    test_eps = 10
+    accum_context = True
+    rewards = 0
+    path_length = 0
+    num_eps = 0
+    total_rewards = []
+    o = env.reset()
+    agent.clear_z()
+    hidden_in = (torch.zeros([1, 1, agent.hidden_dim], dtype=torch.float).to(agent.device),
+                 torch.zeros([1, 1, agent.hidden_dim], dtype=torch.float).to(agent.device))
+    while num_eps < test_eps:
+        if path_length == 0:
+            # a, hidden_out = agent.get_action(hidden_in, o, deterministic=deterministic)
+            hidden_out = hidden_in
+            a = env.action_space.sample()
+        else:
+            a, hidden_out = agent.get_action(hidden_in, o, deterministic=True)
+        hidden_in = hidden_out
+        a = a.squeeze()
+        next_o, r, d, env_info = env.step(a)
+        agent.update_context([o, a, r, next_o, d])
+        env.render()
+        # time.sleep(0.02)
+        rewards += r
+        path_length += 1
+        o = next_o
+
+        if d:
+            num_eps += 1
+            print(f'rewards:{rewards},ave rewards:{rewards / path_length},path_length:{path_length},')
+            time.sleep(0.2)
+            total_rewards.append(rewards)
+            rewards = 0
+            path_length = 0
+            env.seed(num_eps)
+            o = env.reset()
+            agent.clear_z()
+
+    total_rewards = np.array(total_rewards)
+    print( f'total_rewards\n mean: {total_rewards.mean()},std: {total_rewards.std()},max: {total_rewards.max()},min: {total_rewards.min()}')
 
 
 env_id_dict = {0: 'Ant-v2', 1: 'HalfCheetah-v2', 2: 'Hopper-v2', 3: 'Humanoid-v2',
                4: 'Pusher-v2', 5: 'Reacher-v2', 6: 'Striker-v2', 7: 'Swimmer-v2', 8: 'Thrower-v2',
-               9: 'LunarLanderContinuous-v2', 10: 'BipedalWalker-v2', 11: 'BipedalWalkerHardcore-v2'}
+               9: 'LunarLanderContinuous-v2', 10: 'BipedalWalkerHardcore-v3'}
 learner_path_dict = {0: 'ant', 1: 'halfcheetah', 2: 'hopper', 3: 'humanoid',
                      4: 'pusher', 5: 'reacher', 6: 'striker', 7: 'swimmer', 8: 'thrower'}
 
 if __name__ == "__main__":
-    #TODO for Humanoid
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--env', type=str,
-                        default='Humanoid-v2')  # Hopper-v2')Striker-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
-    # reach-v1  push-v1 pick-place-v1
-    parser.add_argument('--max_ep_len', type=int, default=1000)#TODO 200)  # 默认是1000
+                        default='Humanoid-v2') #LunarLanderContinuous-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
+    parser.add_argument('--max_ep_len', type=int, default=1000)  # TODO默认是1000
     parser.add_argument('--save_freq', type=int, default=50)  # 单位为epoch, 默认是1
     parser.add_argument('--hid', type=int, default=256)
     parser.add_argument('--l', type=int, default=2)
@@ -151,31 +178,14 @@ if __name__ == "__main__":
     parser.add_argument('--cuda_id', type=int, default=0)  # TODO
     parser.add_argument('--n_steps', type=float, default=3e6)  # TODO
 
-
     args = parser.parse_args()
-    print('-' * 10)
+    args.model_path='D:\study\code\\backup\LC-SAC\src\\result_cplsar_noQLoss_train_z_det_cbatch128\model_cpl_v3\Humanoid-v2_s0_l20_d50\\1_1_5000_50_1000000_1000000'
 
-    print(f'max_ep_len:{args.max_ep_len}')
-    print(f'latent_dim:{args.latent_dim}')
-    print(f'seq_len:{args.seq_len}')
-    print(f'latent_fq:{args.latent_fq},rl_fq:{args.rl_fq}')
-    print(f'latent_ue:{args.latent_encoder_update_every},rl_ue:{args.rl_update_every}')
-    print(f'latent_buffer_size:{args.latent_buffer_size},rl_buffer_size:{args.rl_buffer_size}')
-
-    print(f'train_z_deterministic:{args.z_deterministic}')
-    print('-' * 10)
-
-
-    def get_key(dict, value):
-        return [k for k, v in dict.items() if v == value]
-
-
-    # for j in range(2,5):
     for j in [0, 1, 2]:#, 3, 4]:
         args.seed = j
         torch.manual_seed(j)
         args.use_next_obs_in_context = False
-        # i = get_key(env_id_dict, args.env)[0]
+
         args.epochs = int(args.n_steps / args.steps_per_epoch)
         print(f'epochs:{args.epochs}')
 
