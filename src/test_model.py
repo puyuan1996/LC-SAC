@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--env', type=str,
-                        default='LunarLanderContinuous-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
+                        default='Humanoid-v2') #LunarLanderContinuous-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
     parser.add_argument('--max_ep_len', type=int, default=10000)  # 默认是1000
     parser.add_argument('--save_freq', type=int, default=50)  # 默认是1
     parser.add_argument('--hid', type=int, default=256)
@@ -135,11 +135,12 @@ if __name__ == "__main__":
     parser.add_argument('--use_next_obs_in_context', type=bool, default=False)
     parser.add_argument('--recurrent', type=bool, default=True)
     args = parser.parse_args()
-
+    args.model_path='D:\study\code\\backup\LC-SAC\src\\result_cplsar_noQLoss_train_z_det_cbatch128\model_cpl_v3\Humanoid-v2_s0_l20_d50\\1_1_5000_50_1000000_1000000'
     for j in range(5):
         for i in [2]:
             torch.manual_seed(j)
             args.env = env_id_dict[i]
+            args.env =
             # args.base_log_dir = './log'
             args.use_next_obs_in_context = False
 

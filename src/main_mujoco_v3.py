@@ -104,7 +104,7 @@ if __name__ == "__main__":
     parser.add_argument('--env', type=str,
                         default='Humanoid-v2')  # Hopper-v2')Striker-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
     # reach-v1  push-v1 pick-place-v1
-    parser.add_argument('--max_ep_len', type=int, default=200)  # 默认是1000
+    parser.add_argument('--max_ep_len', type=int, default=1000)#TODO 200)  # 默认是1000
     parser.add_argument('--save_freq', type=int, default=50)  # 单位为epoch, 默认是1
     parser.add_argument('--hid', type=int, default=256)
     parser.add_argument('--l', type=int, default=2)
