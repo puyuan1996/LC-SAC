@@ -8,3 +8,5 @@ Yuan Pu, Shaochen Wang, Xin Yao, Bin Li. Context-Based Soft Actor Critic for
 Environments with Non-stationary Dynamics. https://arxiv.org/abs/2105.03310.
 
 For producing the experiment results in MetaWorld environment, you should install the metaworld package.
+
+Our code is modified from https://github.com/openai/spinningup.
