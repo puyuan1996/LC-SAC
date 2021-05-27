@@ -34,7 +34,7 @@ def run(args):
     latent_encoder_hidden_dim = args.latent_encoder_hidden_dim  # 128  # 128
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if args.cuda else "cpu")
-    torch.cuda.set_device(args.cuda_id)  # id=0, 1, 2 ,4等 TODO
+    # torch.cuda.set_device(args.cuda_id)  # id=0, 1, 2 ,4等 TODO
     print(f'cuda_id:{args.cuda_id}')
 
     args.device = device  # 'cpu'
@@ -70,21 +70,21 @@ def run(args):
     # optionally load pre-trained weights
     if args.load_model:
         model_path = args.model_path
-        latent_encoder.load_state_dict(torch.load(os.path.join(model_path, 'latent_encoder.pth')))
-        q1_net.load_state_dict(torch.load(os.path.join(model_path, 'q1_net.pth')))
-        q2_net.load_state_dict(torch.load(os.path.join(model_path, 'q2_net.pth')))
-        policy.load_state_dict(torch.load(os.path.join(model_path, 'pi.pth')))
+        latent_encoder.load_state_dict(torch.load(os.path.join(model_path, 'latent_encoder_50.pt')))
+        q1_net.load_state_dict(torch.load(os.path.join(model_path, 'q1_net_50.pt')))
+        q2_net.load_state_dict(torch.load(os.path.join(model_path, 'q2_net_50.pt')))
+        policy.load_state_dict(torch.load(os.path.join(model_path, 'pi_50.pt')))
         print('load model successfully')
 
     print(obs_dim, act_dim)
-    test_eps = 10
-    accum_context = True
+    test_eps = 20
     rewards = 0
     path_length = 0
     num_eps = 0
     total_rewards = []
+
+    test_rew=[]
     o = env.reset()
-    agent.clear_z()
     hidden_in = (torch.zeros([1, 1, agent.hidden_dim], dtype=torch.float).to(agent.device),
                  torch.zeros([1, 1, agent.hidden_dim], dtype=torch.float).to(agent.device))
     while num_eps < test_eps:
@@ -93,30 +93,31 @@ def run(args):
             hidden_out = hidden_in
             a = env.action_space.sample()
         else:
-            a, hidden_out = agent.get_action(hidden_in, o, deterministic=True)
+            z, a, hidden_out = agent.get_action(hidden_in, o, z_deterministic=True, pi_deterministic=True)
         hidden_in = hidden_out
         a = a.squeeze()
         next_o, r, d, env_info = env.step(a)
         agent.update_context([o, a, r, next_o, d])
-        env.render()
+        # env.render()
         # time.sleep(0.02)
         rewards += r
         path_length += 1
         o = next_o
 
-        if d:
+        if d or path_length >= args.max_ep_len:
             num_eps += 1
-            print(f'rewards:{rewards},ave rewards:{rewards / path_length},path_length:{path_length},')
-            time.sleep(0.2)
+            # print(f'rewards:{rewards},ave rewards:{rewards / path_length},path_length:{path_length},')
+            # time.sleep(0.2)
             total_rewards.append(rewards)
             rewards = 0
             path_length = 0
             env.seed(num_eps)
             o = env.reset()
-            agent.clear_z()
+            # agent.clear_z()
 
     total_rewards = np.array(total_rewards)
-    print( f'total_rewards\n mean: {total_rewards.mean()},std: {total_rewards.std()},max: {total_rewards.max()},min: {total_rewards.min()}')
+    print(f'test total_rewards\n mean: {total_rewards.mean()},std: {total_rewards.std()},max: {total_rewards.max()},min: {total_rewards.min()}')
+    test_rew.append(total_rewards.mean())
 
 
 env_id_dict = {0: 'Ant-v2', 1: 'HalfCheetah-v2', 2: 'Hopper-v2', 3: 'Humanoid-v2',
@@ -142,7 +143,7 @@ if __name__ == "__main__":
     parser.add_argument('--steps_per_epoch', type=int, default=10000)  # 500*1e4=5e6
     parser.add_argument('--exp_name', type=str, default='lc-sac')
     parser.add_argument('--model_path', type=str, default='./model_q/')
-    parser.add_argument('--load_model', type=bool, default=False)
+    parser.add_argument('--load_model', type=bool, default=True) #TODO False
     parser.add_argument('--no_cuda', type=bool, default=False)
 
     parser.add_argument('-latent_hd', '--latent_encoder_hidden_dim', type=int, default=128)  # 64)
@@ -176,12 +177,13 @@ if __name__ == "__main__":
     parser.add_argument('--seq_len', type=int, default=20)  # 20
     parser.add_argument('--latent_dim', type=int, default=50)  # TODO 5
     parser.add_argument('--cuda_id', type=int, default=0)  # TODO
-    parser.add_argument('--n_steps', type=float, default=3e6)  # TODO
+    parser.add_argument('--n_steps', type=float, default=2e6)  # TODO
 
     args = parser.parse_args()
     args.model_path='D:\study\code\\backup\LC-SAC\src\\result_cplsar_noQLoss_train_z_det_cbatch128\model_cpl_v3\Humanoid-v2_s0_l20_d50\\1_1_5000_50_1000000_1000000'
 
-    for j in [0, 1, 2]:#, 3, 4]:
+    # for j in [0, 1, 2]:#, 3, 4]:
+    for j in [0]:  # , 3, 4]:
         args.seed = j
         torch.manual_seed(j)
         args.use_next_obs_in_context = False

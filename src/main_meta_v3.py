@@ -6,13 +6,13 @@ import torch.nn as nn
 from latent_encoder import RecurrentLatentEncoder, RecurrentLatentEncoder2head, RecurrentLatentEncoderDet
 from agent_v3 import Agent
 
-import gym
 from spinup.algos.pytorch.sac.core import SquashedGaussianMLPActor, MLPQFunction
 # from spinup.algos.pytorch.sac.sac_meta_40_10 import SAC
 # from spinup.algos.pytorch.sac.sac_meta_10 import SAC
+# from spinup.algos.pytorch.sac.sac_cpl_s_meta_1 import SAC
 from spinup.algos.pytorch.sac.sac_cpl_sar_meta_1 import SAC
+# from spinup.algos.pytorch.sac.sac_cpl_sar_meta_10 import SAC
 # from spinup.algos.pytorch.sac.sac_cpl_sar_ql_meta_1 import SAC
-
 # from spinup.algos.pytorch.sac.sac_cpl-sar_mt10 import SAC
 # from spinup.algos.pytorch.sac.sac_cpl_meta_1 import SAC
 # from spinup.algos.pytorch.sac.csac_cpl_s import SAC
@@ -43,7 +43,7 @@ def run(args):
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if args.cuda else "cpu")
     cuda_id=args.cuda_id
-    torch.cuda.set_device(cuda_id)  # id=0, 1, 2 ,4等 TODO
+    # torch.cuda.set_device(cuda_id)  # id=0, 1, 2 ,4等 TODO
     args.device = device  # 'cpu'
     print('-' * 10)
     print(f'device: {args.device}')
@@ -52,12 +52,6 @@ def run(args):
     if recurrent:
         latent_encoder = RecurrentLatentEncoder2head(input_dim=latent_encoder_input_dim, latent_dim=latent_dim,
                                                      hidden_dim=latent_encoder_hidden_dim, device=args.device)
-    # else:
-    #     latent_encoder = MlpEncoder(
-    #         hidden_sizes=(200, 200, 200),
-    #         input_size=latent_encoder_input_dim,
-    #         output_size=latent_encoder_output_dim,
-    #     )
 
     # hidden_sizes = (net_size, net_size, net_size)
     hidden_sizes = (256, 256)
@@ -129,14 +123,14 @@ if __name__ == "__main__":
     parser.add_argument('--random_steps', type=int, default=0)  # 10000
     parser.add_argument('--update_begin_steps', type=int, default=2000)  # 1000
 
-    parser.add_argument('--kl_lambda', type=float, default=0) #TODO 0.1
+    parser.add_argument('--kl_lambda', type=float, default=0) #TODO 0.2
     parser.add_argument('--cpl_lambda', type=float, default=1)
-    parser.add_argument('--ql_lambda', type=float, default=0.1)
+    parser.add_argument('--ql_lambda', type=float, default=0.2)
 
     parser.add_argument('--latent_lr', type=float, default=3e-4)  # 1e-6
     parser.add_argument('--sac_lr', type=float, default=3e-4)  # 1e-3)
     parser.add_argument('--env_id_str', type=list, default=[2, 1, 0] + list(range(3, 12)))
-    parser.add_argument('--z_deterministic', type=bool, default=True) #TODO False
+    parser.add_argument('--z_deterministic', type=bool, default=False) #TODO False
     parser.add_argument('--pi_deterministic', type=bool, default=False)
     parser.add_argument('--rl_batch_size', type=int, default=128)
     parser.add_argument('--latent_batch_size', type=int, default=128) #256
@@ -170,24 +164,13 @@ if __name__ == "__main__":
     def get_key(dict, value):
         return [k for k, v in dict.items() if v == value]
 
-
-    # for j in range(2,5):
-    for j in [0, 1, 2, 3, 4]:
+    for j in range(5):
         args.seed = j
         torch.manual_seed(j)
         args.use_next_obs_in_context = False
         # i = get_key(env_id_dict, args.env)[0]
         args.epochs = int(args.n_steps/args.steps_per_epoch)
         print(f'epochs:{args.epochs}')
-        # i = 2
-        # if i == 2:  # Hopper meta_world
-        #     args.epochs = 250  # 3e6
-        # elif i in [0, 1, 7, 9]:  # Ant,HalfCheetah, Swimmer,LunarLanderContinuous
-        #     args.epochs = 300  # 3e6
-        # elif i in [3, 11]:  # Humanoid,BipedalWalkerHardCore
-        #     args.epochs = 500  # 10e6
-        # else:  # Striker,Pusher,Reacher,Thrower, BipedalWalker
-        #     args.epochs = 400  # 4e6
         print('-' * 10)
         print(f'experiment {args.env} seed {j} begin!')
         print('-' * 10)

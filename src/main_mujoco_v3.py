@@ -18,12 +18,6 @@ import pytorch_util as ptu
 
 def run(args):
     env = gym.make(args.env)
-    import metaworld
-    import random
-    # ml1 = metaworld.ML1(f'{args.env}')  # Construct the benchmark, sampling tasks
-    # env = ml1.train_classes[f'{args.env}']()  # Create an environment with task `pick_place`
-    # task = random.choice(ml1.train_tasks)  # ml1.train_tasks 长度为50的list
-    # env.set_task(task)  # Set task 这里的env只是用来求观察空间和动作空间
 
     obs_dim = env.observation_space.shape[0]
     act_dim = env.action_space.shape[0]
@@ -38,7 +32,7 @@ def run(args):
     latent_encoder_hidden_dim = args.latent_encoder_hidden_dim  # 128  # 128
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if args.cuda else "cpu")
-    torch.cuda.set_device(args.cuda_id)  # id=0, 1, 2 ,4等 TODO
+    # torch.cuda.set_device(args.cuda_id)  # id=0, 1, 2 ,4等 TODO
     print(f'cuda_id:{args.cuda_id}')
 
     args.device = device  # 'cpu'
@@ -49,12 +43,6 @@ def run(args):
     if recurrent:
         latent_encoder = RecurrentLatentEncoder2head(input_dim=latent_encoder_input_dim, latent_dim=latent_dim,
                                                      hidden_dim=latent_encoder_hidden_dim, device=args.device)
-    else:
-        latent_encoder = MlpEncoder(
-            hidden_sizes=(200, 200, 200),
-            input_size=latent_encoder_input_dim,
-            output_size=latent_encoder_output_dim,
-        )
 
     # hidden_sizes = (net_size, net_size, net_size)
     hidden_sizes = (256, 256)
@@ -102,9 +90,9 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--env', type=str,
-                        default='Humanoid-v2')  # Hopper-v2')Striker-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
+                        default='BipedalWalkerHardcore-v3')#'Humanoid-v2')  # Hopper-v2') Striker-v2')  # BipedalWalker-v3' MountainCarContinuous-v0' HalfCheetah-v2'
     # reach-v1  push-v1 pick-place-v1
-    parser.add_argument('--max_ep_len', type=int, default=1000)#TODO 200)  # 默认是1000
+    parser.add_argument('--max_ep_len', type=int, default=10000)#TODO 200)  # 默认是1000
     parser.add_argument('--save_freq', type=int, default=50)  # 单位为epoch, 默认是1
     parser.add_argument('--hid', type=int, default=256)
     parser.add_argument('--l', type=int, default=2)
@@ -125,7 +113,7 @@ if __name__ == "__main__":
     parser.add_argument('--train_steps', type=int, default=50)
     parser.add_argument('--collect_data_samples', type=int, default=50)
     parser.add_argument('--random_steps', type=int, default=0)  # 10000
-    parser.add_argument('--update_begin_steps_rl', type=int, default=100000)  # 1000
+    parser.add_argument('--update_begin_steps_rl', type=int, default=1)  # 1000
     parser.add_argument('--update_begin_steps_latent', type=int, default=0)  # 1000
 
     parser.add_argument('--kl_lambda', type=float, default=0) #TODO 0.1
@@ -147,9 +135,9 @@ if __name__ == "__main__":
     parser.add_argument('-rl_bs', '--rl_buffer_size', type=int, default=1000000)  # 5000
 
     parser.add_argument('--seq_len', type=int, default=20)  # 20
-    parser.add_argument('--latent_dim', type=int, default=50)  # TODO 5
+    parser.add_argument('--latent_dim', type=int, default=10)  # TODO 5
     parser.add_argument('--cuda_id', type=int, default=0)  # TODO
-    parser.add_argument('--n_steps', type=float, default=3e6)  # TODO
+    parser.add_argument('--n_steps', type=float, default=2e6)  # TODO
 
 
     args = parser.parse_args()
