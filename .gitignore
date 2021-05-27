@@ -116,3 +116,5 @@ data*
 plot
 result*
 #metaworld
+test*
+src/test*
