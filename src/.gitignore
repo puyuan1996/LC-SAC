@@ -41,3 +41,4 @@ __pycache__
 /model_z/**
 /model_z_tcl
 /model_z_tcl/**
+test*
